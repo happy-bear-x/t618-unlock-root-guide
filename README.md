@@ -24,18 +24,21 @@
 
 厂商把假参数直接做进了 prop，甚至留了自曝字段（`real_*` 是真实值、`modify_*` 是上报值），并用一堆 `show_*=0` 开关把真参数从设置里藏掉：
 
-| 项目 | ROM 显示 / 上报 | 实测真实值 | 证据 prop |
-| --- | --- | --- | --- |
-| 运行内存 | **10GB**（内核 `/proc/meminfo` 被伪造成 `MemTotal: 10485760 kB`，设置同显） | **4GB** | `ro.odm.real_ram=4` / `modify_ram=10` |
-| 存储 | **256GB** | **128GB**（userdata 可用约 101GB） | `ro.odm.real_rom=128` / `modify_rom=256` |
-| CPU 型号 | **MTK P60**（联发科） | **展锐虎贲 T618 / ums512** | `ro.odm.cpumodel=MTK P60`，而 `factory_board=SD` |
-| 屏幕分辨率 | **2560×1440（2K）** | **720×1600** | `lcm_real_width/height=720/1600` vs `lcm_modify_*=2560/1440` |
-| 电池容量 | 10000mAh（设置里被 `show_battery_capacity=0` 藏掉实测值） | 未标定 | `ro.odm.battery_capacity=10000` |
+| 项目     | ROM 显示 / 上报                                                    | 实测真实值                         | 证据 prop                                                      |
+| ------ | -------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------ |
+| 运行内存   | **10GB**（内核 `/proc/meminfo` 被伪造成 `MemTotal: 10485760 kB`，设置同显） | **4GB**                       | `ro.odm.real_ram=4` / `modify_ram=10`                        |
+| 存储     | **256GB**                                                      | **128GB**（userdata 可用约 101GB） | `ro.odm.real_rom=128` / `modify_rom=256`                     |
+| CPU 型号 | **MTK P60**（联发科）                                               | **展锐虎贲 T618 / ums512**        | `ro.odm.cpumodel=MTK P60`，而 `factory_board=SD`               |
+| 屏幕分辨率  | **2560×1440（2K）**                                              | **720×1600**                  | `lcm_real_width/height=720/1600` vs `lcm_modify_*=2560/1440` |
+| 电池容量   | 10000mAh（设置里被 `show_battery_capacity=0` 藏掉实测值）                 | 未标定                           | `ro.odm.battery_capacity=10000`                              |
 
 > 注：本机为无摄像头设计，ROM 里的 `back/front_camera_size` 等相机 prop 是方案商模板残留，无参考价值，不列入对比。
 
-> ⚠️ **更正（实测）**：早期记录里写的「拨号暗码 `*#8888#` 看真实参数」是**错的**——本机并未注册 8888，在拨号盘输入无任何反应。用 `dumpsys` 查 `com.sprd.validationtools`（展锐工厂测试工具）实际注册的暗码是 **`*#*#83789#*#*`**（另有 `*#*#654987#*#*`、`*#*#833#*#*`）。
-> 另注：`android.provider.Telephony.SECRET_CODE` 是**受保护广播，只能由拨号盘触发**，`adb shell am broadcast` 会被 `Permission Denial: ... uid=2000` 拒绝，无法用命令行模拟验证。要看真实内存，最可靠的仍是 root 后读 `/proc/iomem`（物理 RAM bank，见《T618-内存假标诊断》）。
+> **拨号暗码（以真机实测为准）**：
+> - **`*#8888#`**：**已实测确认可用**——拨号盘输入后从底部弹出带「确定」按钮的对话框，直接显示真值 **`ROM_AND_RAM / ROM:128G / RAM:4G`**（对比设置页谎报的 256GB / 10GB，正好差一倍）。它是 Dialog 而非 Activity，任务栈里查不到，只能在拨号盘真实输入触发。
+> - **`*#*#4636#*#*`**：本机 `com.android.settings/.TestingSettingsBroadcastReceiver` 已注册（`dumpsys` 确认），Android 标准「测试 / 手机信息」页，可用。
+> - **`*#*#83789#*#*`**、**`*#*#654987#*#*`**、**`*#*#833#*#*`**：展锐工厂测试工具 `com.sprd.validationtools` 注册（`dumpsys` 确认）。
+> 排查注记：该广播是**受保护广播**（`adb shell am broadcast` 会被 `Permission Denial ... uid=2000` 拒绝），且 **ADB 注入的 `input text` / `input keyevent` 在这款 AOSP 拨号盘上不会触发暗码**（注入事件不走 `TextWatcher`），全量 `dumpsys package` 管道还会被系统截断——这三点是自动化查证此事的真实局限，暗码只能靠真机拨号盘手动确认。看真实内存最可靠的仍是 root 后读 `/proc/iomem`（物理 RAM bank，见《T618-内存假标诊断》）。
 
 > 物理不可能的铁证：开机后 `/proc/meminfo` 自报 `MemAvailable: 5741332 kB`（约 5.6GB"可用"）——**比 4GB 的物理内存还大**。整个内存水位全是按假 10GB 编的，这也从根上解释了为什么这台机"卡且杀后台异常"：内核内存管理建立在不存在的 10GB 上。
 
@@ -43,12 +46,12 @@
 
 ## 文档导航
 
-| 文档 | 内容 |
-| --- | --- |
-| [T618-BL解锁全记录.md](T618-BL解锁全记录.md) | 常规解锁为何被堵死 → CVE 原理 → 驱动攻坚（Zadig 失败 → SPRD 官方 WHQL 驱动）→ BROM 时序铁律 → 六阶段解锁脚本 → 9 条踩坑 |
-| [T618-Root全记录.md](T618-Root全记录.md) | **为什么最终是 root 而不是 AB 双槽**（GSI 穷尽失败时间线）→ Magisk 修补流程 → bootloop 排查（miscdata token 被冲零）→ 工具清单 → 去广告/去桌宠固化成果 |
-| [T618-禁用应用清单.md](T618-禁用应用清单.md) | 本机已禁用 **29 个** OEM 捆绑 / 广告 / 不必要系统包清单（含包名、类别、原因、禁用手段），附恢复方法与权衡（FotaApp→无 OTA、百度辅助定位→室内定位退化等） |
-| [T618-内存假标诊断.md](T618-内存假标诊断.md) | 假 10GB 内存诊断：`/proc/iomem` 物理真实 4GB 铁证、伪造元凶 emem 内核组件、回收策略实际按真实 4GB、顺带修复 swappiness 被厂商覆盖回 150 的 bug（已改 70），并给出"是否动内核根治"的取舍 |
+| 文档                                 | 内容                                                                                                                         |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [T618-BL解锁全记录.md](T618-BL解锁全记录.md) | 常规解锁为何被堵死 → CVE 原理 → 驱动攻坚（Zadig 失败 → SPRD 官方 WHQL 驱动）→ BROM 时序铁律 → 六阶段解锁脚本 → 9 条踩坑                                         |
+| [T618-Root全记录.md](T618-Root全记录.md) | **为什么最终是 root 而不是 AB 双槽**（GSI 穷尽失败时间线）→ Magisk 修补流程 → bootloop 排查（miscdata token 被冲零）→ 工具清单 → 去广告/去桌宠固化成果                  |
+| [T618-禁用应用清单.md](T618-禁用应用清单.md)   | 本机已禁用 **29 个** OEM 捆绑 / 广告 / 不必要系统包清单（含包名、类别、原因、禁用手段），附恢复方法与权衡（FotaApp→无 OTA、百度辅助定位→室内定位退化等）                               |
+| [T618-内存假标诊断.md](T618-内存假标诊断.md)   | 假 10GB 内存诊断：`/proc/iomem` 物理真实 4GB 铁证、伪造元凶 emem 内核组件、回收策略实际按真实 4GB、顺带修复 swappiness 被厂商覆盖回 150 的 bug（已改 70），并给出"是否动内核根治"的取舍 |
 
 ## 目录结构
 
@@ -72,18 +75,18 @@
 
 ## 未入库的大文件 / 敏感文件（见 `.gitignore`）
 
-| 文件 | 原因 | 替代获取 |
-| --- | --- | --- |
-| `sprd-unlock/work/backup/` | 7.3GB **设备唯一**全量分区备份，含 NV/射频校准，禁止分发 | 对**自己的**设备跑 `work/step0b_backup_key.bat` |
-| `sprd-unlock/work/miscdata.bin` | 含本机解锁 token，设备唯一敏感数据 | 解锁流程会在你手机上自动生成 |
-| `sprd-unlock/work/magisk_patched_b.img` | 本机修补的 boot，对其他设备无意义 | 按文档 §4 用 Magisk 修补**自己的** boot |
-| `gsi/` 下 GSI 镜像 | 单文件 >100MB（GitHub 硬限），且实测不可用 | phh: `TrebleDroid/treble_experimentations` releases；官方 GSI: Android 开发者网站 |
-| `sprd-unlock/tomking/` | 内嵌 git 仓库无法随仓库分发 | [TomKing062/CVE-2022-38694_unlock_bootloader](https://github.com/TomKing062/CVE-2022-38694_unlock_bootloader) |
-| `gsi/avb_test.pem` | AB 战役 vbmeta 自签用的一次性测试私钥（私钥不入库，哪怕只是 test key） | 按 Root 记录 §2.5 用 avbtool + openssl 自己生成 |
+| 文件                                      | 原因                                            | 替代获取                                                                                                            |
+| --------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `sprd-unlock/work/backup/`              | 7.3GB **设备唯一**全量分区备份，含 NV/射频校准，禁止分发           | 对**自己的**设备跑 `work/step0b_backup_key.bat`                                                                        |
+| `sprd-unlock/work/miscdata.bin`         | 含本机解锁 token，设备唯一敏感数据                          | 解锁流程会在你手机上自动生成                                                                                                  |
+| `sprd-unlock/work/magisk_patched_b.img` | 本机修补的 boot，对其他设备无意义                           | 按文档 §4 用 Magisk 修补**自己的** boot                                                                                  |
+| `gsi/` 下 GSI 镜像                         | 单文件 >100MB（GitHub 硬限），且实测不可用                  | phh: `TrebleDroid/treble_experimentations` releases；官方 GSI: Android 开发者网站                                       |
+| `sprd-unlock/tomking/`                  | 内嵌 git 仓库无法随仓库分发                              | [TomKing062/CVE-2022-38694\_unlock\_bootloader](https://github.com/TomKing062/CVE-2022-38694_unlock_bootloader) |
+| `gsi/avb_test.pem`                      | AB 战役 vbmeta 自签用的一次性测试私钥（私钥不入库，哪怕只是 test key） | 按 Root 记录 §2.5 用 avbtool + openssl 自己生成                                                                         |
 
 ## 致谢 / 来源
 
-- [TomKing062/CVE-2022-38694_unlock_bootloader](https://github.com/TomKing062/CVE-2022-38694_unlock_bootloader) —— spd_dump 与解锁方法论
+- [TomKing062/CVE-2022-38694\_unlock\_bootloader](https://github.com/TomKing062/CVE-2022-38694_unlock_bootloader) —— spd_dump 与解锁方法论
 - [topjohnwu/Magisk](https://github.com/topjohnwu/Magisk) —— root 方案
 - LineageOS `android_external_avb`（avbtool）—— AB 战役中的 vbmeta 自签
 - phh / TrebleDroid GSI、Google 官方 GSI
