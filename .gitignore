@@ -1,0 +1,69 @@
+# ================================================================
+# 仓库白名单：README + 两篇文档 + sprd-unlock/ + gsi/
+# （工作区/本目录下的其他报告、脚本、截图一概不入库）
+# ================================================================
+/*
+!/.gitignore
+!/README.md
+!/T618-BL解锁全记录.md
+!/T618-Root全记录.md
+!/sprd-unlock/
+!/gsi/
+
+# ================================================================
+# 设备唯一 / 敏感数据 —— 绝对禁止分发
+# ================================================================
+# BROM 全量分区备份：7.3GB，含 NV/射频校准/prodnv，每台机不同
+sprd-unlock/work/backup/
+# spd_dump 运行日志
+sprd-unlock/work/Log/
+# 加密元数据（FBE/ICE 密钥区）
+sprd-unlock/work/metadata.bin
+# 解锁 token（miscdata offset 8192）及其读取样例
+sprd-unlock/work/miscdata.bin
+sprd-unlock/work/m.bin
+# misc / 槽位状态 dump（BCAB 等，设备当时态）
+sprd-unlock/work/misc.bin
+sprd-unlock/work/misc_a2.bin
+sprd-unlock/work/misc_b.bin
+sprd-unlock/work/misc_b2.bin
+sprd-unlock/work/misc_bootonce.bin
+# 其他分区 dump
+sprd-unlock/work/pm_sys_a.bin
+sprd-unlock/work/pm_sys_b.bin
+# 启动日志 / 系统转储
+sprd-unlock/work/uboot_log.bin
+sprd-unlock/work/uboot_log_dump.bin
+sprd-unlock/work/sysdumpdb.bin
+# 误存网页
+sprd-unlock/pub.html
+
+# ================================================================
+# 超限 / 对他人无意义
+# ================================================================
+# GitHub 单文件硬限 100MB；修补 boot 请按文档自己生成
+sprd-unlock/work/magisk_patched_b.img
+# 全零填充 / 每次连接自动导出的分区表副本（partitions.xml 保留）
+sprd-unlock/work/zero1m.bin
+sprd-unlock/work/partition_*.xml
+# GSI 大镜像（>100MB，且已实测不可行，仅文档存档结论）
+gsi/*.img
+gsi/*.zip
+gsi/*.xz
+gsi/zero64m.bin
+# 本机 ramdisk / stock vbmeta dump
+gsi/vendor_ramdisk_b.*
+gsi/ramdisk_b.*
+gsi/backup/
+gsi/vbmeta_a.bin
+# AB 战役临时产物：测试私钥（一次性 test key，私钥不入库）与下载缓存
+gsi/avb_test.pem
+gsi/avb_b64.json
+# 第三方源码以内链代替镜像（内嵌 git 仓库无法随仓库分发，见 README 链接）
+sprd-unlock/tomking/
+
+# ================================================================
+# OS / 编辑器垃圾
+# ================================================================
+Thumbs.db
+Desktop.ini
