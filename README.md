@@ -44,6 +44,7 @@
 | --- | --- |
 | [T618-BL解锁全记录.md](T618-BL解锁全记录.md) | 常规解锁为何被堵死 → CVE 原理 → 驱动攻坚（Zadig 失败 → SPRD 官方 WHQL 驱动）→ BROM 时序铁律 → 六阶段解锁脚本 → 9 条踩坑 |
 | [T618-Root全记录.md](T618-Root全记录.md) | **为什么最终是 root 而不是 AB 双槽**（GSI 穷尽失败时间线）→ Magisk 修补流程 → bootloop 排查（miscdata token 被冲零）→ 工具清单 → 去广告/去桌宠固化成果 |
+| [T618-禁用应用清单.md](T618-禁用应用清单.md) | 本机已禁用 **29 个** OEM 捆绑 / 广告 / 不必要系统包清单（含包名、类别、原因、禁用手段），附恢复方法与权衡（FotaApp→无 OTA、百度辅助定位→室内定位退化等） |
 
 ## 目录结构
 
@@ -52,6 +53,7 @@
 ├── README.md
 ├── T618-BL解锁全记录.md
 ├── T618-Root全记录.md
+├── T618-禁用应用清单.md    # 已禁用的 29 个 OEM/广告/系统包清单（包名+原因+手段）
 ├── sprd-unlock/           # 解锁 + 刷写全套（预编译）
 │   ├── work/              # spd_dump.exe、fdl、解锁六阶段 bat、刷 boot bat、LP 头补丁
 │   ├── driver/            # SPRD 官方 WHQL 驱动（sprdvcom.inf，覆盖 VID_1782&PID_4D00）
